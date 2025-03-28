@@ -4,6 +4,7 @@ Board.__index = Board
 -- Constants for board dimensions
 local BOARD_WIDTH = 7
 local BOARD_HEIGHT = 10
+local CELL_SIZE = 50  -- Add this constant for cell size
 
 function Board.new(randomFn)
     local self = setmetatable({}, Board)
@@ -20,6 +21,18 @@ function Board.new(randomFn)
     -- Store random function or use love.math.random if available
     self.randomFn = randomFn or (love and love.math.random or math.random)
     
+    -- Add selection and animation tracking
+    self.selectedGem = nil
+    self.selectedX = nil
+    self.selectedY = nil
+    
+    -- Add animation properties
+    self.animatingGem = nil
+    self.startX = nil
+    self.targetX = nil
+    self.animationTime = 0
+    self.animationDuration = 0.2 -- Duration in seconds
+    
     return self
 end
 
@@ -29,6 +42,10 @@ end
 
 function Board:getHeight()
     return BOARD_HEIGHT
+end
+
+function Board:getCellSize()
+    return CELL_SIZE
 end
 
 function Board:isValidPosition(x, y)
@@ -97,6 +114,77 @@ function Board:fillWithGems()
     end
 end
 
+function Board:selectGem(x, y)
+    if self:isValidPosition(x, y) then
+        self.selectedGem = self:getGem(x, y)
+        self.selectedX = x
+        self.selectedY = y
+        if self.selectedGem then
+            self.selectedGem:setSelected(true)
+            self.startX = x
+        end
+    end
+end
+
+function Board:updateGemPosition(offsetX)
+    if not self.selectedGem then return end
+    
+    -- Limit movement to one cell width in either direction
+    local maxOffset = CELL_SIZE
+    offsetX = math.max(-maxOffset, math.min(maxOffset, offsetX))
+    
+    -- Calculate new visual position
+    local visualX = self.selectedX + (offsetX / CELL_SIZE)
+    
+    -- Round to 2 decimal places to avoid floating-point precision issues
+    visualX = math.floor(visualX * 100) / 100
+    
+    -- Update only the visual position, keeping grid position intact
+    self.selectedGem:setVisualPosition(visualX, self.selectedY)
+end
+
+function Board:update(dt)
+    -- Handle gem return animation
+    if self.animatingGem then
+        self.animationTime = self.animationTime + dt
+        
+        -- Calculate progress (0 to 1)
+        local progress = math.min(self.animationTime / self.animationDuration, 1)
+        
+        -- Linear interpolation between start and target position
+        local newX = self.startX + (self.targetX - self.startX) * progress
+        local _, gridY = self.animatingGem:getPosition()
+        
+        -- Fix: Round the position to avoid floating point issues
+        newX = math.floor(newX * 100) / 100
+        self.animatingGem:setVisualPosition(newX, gridY)
+        
+        -- Check if animation is complete
+        if progress >= 1 then
+            -- Ensure final position is exactly on grid
+            self.animatingGem:setVisualPosition(self.targetX, gridY)
+            self.animatingGem = nil
+            self.animationTime = 0
+        end
+    end
+end
+
+function Board:releaseGem()
+    if self.selectedGem then
+        -- Start return animation
+        self.animatingGem = self.selectedGem
+        local visualX, _ = self.selectedGem:getVisualPosition()
+        self.startX = visualX
+        self.targetX = self.selectedX
+        self.animationTime = 0
+        
+        self.selectedGem:setSelected(false)
+        self.selectedGem = nil
+        self.selectedX = nil
+        self.selectedY = nil
+    end
+end
+
 function Board:draw(offsetX, offsetY, cellSize)
     -- Draw board background
     love.graphics.setColor(0.2, 0.2, 0.2)
@@ -128,7 +216,7 @@ function Board:draw(offsetX, offsetY, cellSize)
         )
     end
 
-    -- Draw cells and gems
+    -- Draw cells and non-selected gems first
     for x = 1, self:getWidth() do
         for y = 1, self:getHeight() do
             -- Draw cell background
@@ -141,16 +229,27 @@ function Board:draw(offsetX, offsetY, cellSize)
                 cellSize
             )
 
-            -- Draw gem if present
+            -- Draw gem if present and not selected
             local gem = self:getGem(x, y)
-            if gem then
+            if gem and gem ~= self.selectedGem then
+                local visualX, visualY = gem:getVisualPosition()
                 gem:draw(
-                    offsetX + (x-1) * cellSize,
-                    offsetY + (y-1) * cellSize,
+                    offsetX + (visualX-1) * cellSize,
+                    offsetY + (visualY-1) * cellSize,
                     cellSize
                 )
             end
         end
+    end
+
+    -- Draw selected gem last (on top)
+    if self.selectedGem then
+        local visualX, visualY = self.selectedGem:getVisualPosition()
+        self.selectedGem:draw(
+            offsetX + (visualX-1) * cellSize,
+            offsetY + (visualY-1) * cellSize,
+            cellSize
+        )
     end
 
     -- Reset color

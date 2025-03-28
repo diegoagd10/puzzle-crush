@@ -53,6 +53,8 @@ function Gem.new(config)
     self.direction = config.direction
     self.x = nil
     self.y = nil
+    self.visualX = nil
+    self.visualY = nil
     self.matched = false
     self.selected = false
     
@@ -74,10 +76,26 @@ end
 function Gem:setPosition(x, y)
     self.x = x
     self.y = y
+    -- Initialize visual position to match grid position
+    if not self.visualX then
+        self.visualX = x
+    end
+    if not self.visualY then
+        self.visualY = y
+    end
 end
 
 function Gem:getPosition()
     return self.x, self.y
+end
+
+function Gem:getVisualPosition()
+    return self.visualX or self.x, self.visualY or self.y
+end
+
+function Gem:setVisualPosition(x, y)
+    self.visualX = x
+    self.visualY = y
 end
 
 function Gem:isMultiColor()

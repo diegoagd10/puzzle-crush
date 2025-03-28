@@ -95,23 +95,6 @@ function Gem:isMouseOver(x, y)
            y <= visualY + self.height
 end
 
-function Gem:isValidReleasePosition(x, y)
-    -- For now, we'll consider positions within one gem width/height as valid
-    -- This will be expanded later to check for actual gem positions
-    local gridX = math.floor(x / (self.width + PADDING))
-    local gridY = math.floor(y / (self.height + PADDING))
-    
-    -- Only consider positions within one gem width/height of current position
-    local currentGridX = math.floor(self.x / (self.width + PADDING))
-    local currentGridY = math.floor(self.y / (self.height + PADDING))
-    
-    -- Check if the release position is adjacent to current position
-    local xDiff = math.abs(gridX - currentGridX)
-    local yDiff = math.abs(gridY - currentGridY)
-    
-    return xDiff <= 1 and yDiff <= 1 and not (xDiff == 1 and yDiff == 1)
-end
-
 function Gem:onMousePressed(x, y)
     if self:isMouseOver(x, y) then
         self._state = "selected"
@@ -125,7 +108,6 @@ end
 function Gem:onMouseMoved(x, y)
     self._mouseX = x
     self._mouseY = y
-    self._isValidRelease = self:isValidReleasePosition(x, y)
 end
 
 function Gem:onMouseReleased(x, y)
@@ -133,15 +115,8 @@ function Gem:onMouseReleased(x, y)
         self._state = "idle"
         self._mouseX = 0
         self._mouseY = 0
-        
-        -- Check validity at release time
-        self._isValidRelease = self:isValidReleasePosition(x, y)
-        
-        if not self._isValidRelease then
-            self.x = self._originalX  -- Return to original position
-            self.y = self._originalY
-        end
-        -- If valid release, maintain current position for potential swap
+        self.x = self._originalX
+        self.y = self._originalY
     end
 end
 

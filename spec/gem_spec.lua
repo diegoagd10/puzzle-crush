@@ -117,7 +117,7 @@ describe("Gem", function()
         assert.are.equal(5, visualX)  -- Visual position includes padding
     end)
 
-    it("should maintain position when released", function()
+    it("should return to original position when released over invalid position", function()
         local gem = Gem.new()
         gem:setPosition(0, 0)
         gem:setDimensions(50, 50)
@@ -127,15 +127,28 @@ describe("Gem", function()
         gem:onMouseMoved(100, 0)
         gem:update(1.0)  -- Move for 1 second
         assert.are.equal(75, gem.x)  -- Should reach target (100) minus half width (25)
-        local visualX = gem:getVisualPosition()
-        assert.are.equal(80, visualX)  -- Visual position includes padding
         
-        -- Release and update
+        -- Release over invalid position (outside grid)
+        gem:onMouseReleased(200, 0)
+        gem:update(0.5)
+        assert.are.equal(0, gem.x)  -- Should return to original position
+    end)
+
+    it("should maintain position when released over valid position", function()
+        local gem = Gem.new()
+        gem:setPosition(0, 0)
+        gem:setDimensions(50, 50)
+        
+        -- Select and move
+        gem:onMousePressed(30, 30)  -- Account for padding
+        gem:onMouseMoved(100, 0)
+        gem:update(1.0)  -- Move for 1 second
+        assert.are.equal(75, gem.x)  -- Should reach target (100) minus half width (25)
+        
+        -- Release over valid position (another gem's position)
         gem:onMouseReleased(100, 0)
         gem:update(0.5)
-        assert.are.equal(75, gem.x)  -- Should maintain position
-        visualX = gem:getVisualPosition()
-        assert.are.equal(80, visualX)  -- Visual position includes padding
+        assert.are.equal(75, gem.x)  -- Should maintain position for potential swap
     end)
 
     it("should only change state to selected when mouse is over the gem", function()

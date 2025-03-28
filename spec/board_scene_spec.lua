@@ -1,16 +1,17 @@
+require('spec.love_mock')
 local BoardScene = require('src.entities.board_scene')
 
 describe('BoardScene', function()
     local boardScene
 
-    beforeEach(function()
+    before_each(function()
         boardScene = BoardScene.new()
     end)
 
     describe('creation', function()
         it('should create a board with correct dimensions', function()
             local gameObjects = boardScene:getGameObjects()
-            assert.equals(700, #gameObjects) -- 70 * 10 gems
+            assert.equals(360, #gameObjects) -- 8 * 45 gems
         end)
 
         it('should initialize gems with valid colors', function()
@@ -25,15 +26,15 @@ describe('BoardScene', function()
             local gameObjects = boardScene:getGameObjects()
             local firstGem = gameObjects[1]
             local secondGem = gameObjects[2]
-            local lastGem = gameObjects[700]
+            local lastGem = gameObjects[360]
 
-            -- Assuming gem size is 50x50 pixels
+            -- Gem size is 40x40 pixels
             assert.equals(0, firstGem.x)
             assert.equals(0, firstGem.y)
-            assert.equals(50, secondGem.x)
+            assert.equals(45, secondGem.x)  -- 40 + 5 padding
             assert.equals(0, secondGem.y)
-            assert.equals(3450, lastGem.x) -- (70-1) * 50
-            assert.equals(450, lastGem.y)  -- (10-1) * 50
+            assert.equals(315, lastGem.x)   -- (8-1) * 45
+            assert.equals(1980, lastGem.y)  -- (45-1) * 45
         end)
     end)
 end) 

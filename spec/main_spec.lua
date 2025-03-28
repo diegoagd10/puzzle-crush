@@ -1,3 +1,4 @@
+require('spec.love_mock')
 local Main = require('src.main')
 local BoardScene = require('src.entities.board_scene')
 local GraphicsWrapper = require('src.graphics.graphics_wrapper')
@@ -13,7 +14,7 @@ describe('Main Game', function()
 
     it('should initialize with a board scene', function()
         local gameObjects = main.boardScene:getGameObjects()
-        assert.equals(700, #gameObjects) -- 70 * 10 gems
+        assert.equals(360, #gameObjects) -- 8 * 45 gems
     end)
 
     it('should update and draw the board scene', function()
@@ -26,6 +27,6 @@ describe('Main Game', function()
         -- Verify that the board scene exists and has the correct number of gems
         assert.is_not_nil(main.boardScene)
         local gameObjects = main.boardScene:getGameObjects()
-        assert.equals(700, #gameObjects)
+        assert.equals(360, #gameObjects) -- 8 * 45 gems
     end)
 end) 

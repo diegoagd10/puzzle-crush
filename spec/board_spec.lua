@@ -46,4 +46,65 @@ describe("Board", function()
             assert.is_true(board:isValidPosition(7, 10))
         end)
     end)
+
+    describe("Filling the board", function()
+        local board
+        local currentIndex = 0
+        local deterministicRandom = function(max)
+            currentIndex = currentIndex + 1
+            return currentIndex % max + 1
+        end
+
+        before_each(function()
+            currentIndex = 0
+            board = Board.new(deterministicRandom)
+        end)
+
+        it("should fill the board with random gems", function()
+            board:fillWithGems()
+            
+            for x = 1, board:getWidth() do
+                for y = 1, board:getHeight() do
+                    local gem = board:getGem(x, y)
+                    assert.is_not_nil(gem)
+                    assert.are.equal("regular", gem:getType())
+                    assert.is_not_nil(gem:getColor())
+                end
+            end
+        end)
+
+        it("should not create matches when filling the board", function()
+            board:fillWithGems()
+            
+            -- Check horizontal matches
+            for y = 1, board:getHeight() do
+                for x = 1, board:getWidth() - 2 do
+                    local gem1 = board:getGem(x, y)
+                    local gem2 = board:getGem(x + 1, y)
+                    local gem3 = board:getGem(x + 2, y)
+                    
+                    assert.is_false(
+                        gem1:getColor() == gem2:getColor() and 
+                        gem2:getColor() == gem3:getColor(),
+                        "Found horizontal match at (" .. x .. "," .. y .. ")"
+                    )
+                end
+            end
+            
+            -- Check vertical matches
+            for x = 1, board:getWidth() do
+                for y = 1, board:getHeight() - 2 do
+                    local gem1 = board:getGem(x, y)
+                    local gem2 = board:getGem(x, y + 1)
+                    local gem3 = board:getGem(x, y + 2)
+                    
+                    assert.is_false(
+                        gem1:getColor() == gem2:getColor() and 
+                        gem2:getColor() == gem3:getColor(),
+                        "Found vertical match at (" .. x .. "," .. y .. ")"
+                    )
+                end
+            end
+        end)
+    end)
 end) 

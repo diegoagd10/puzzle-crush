@@ -23,6 +23,14 @@ local VALID_DIRECTIONS = {
     vertical = true
 }
 
+function Gem.getValidColors()
+    local colors = {}
+    for color, _ in pairs(VALID_COLORS) do
+        table.insert(colors, color)
+    end
+    return colors
+end
+
 function Gem.new(config)
     if not config.type or not VALID_TYPES[config.type] then
         error("Invalid gem type: " .. (config.type or "nil"))
@@ -90,6 +98,31 @@ end
 
 function Gem:isSelected()
     return self.selected
+end
+
+function Gem:draw(x, y, cellSize)
+    local color = self:getColor()
+    if color == "red" then
+        love.graphics.setColor(1, 0, 0)
+    elseif color == "blue" then
+        love.graphics.setColor(0, 0, 1)
+    elseif color == "green" then
+        love.graphics.setColor(0, 1, 0)
+    elseif color == "yellow" then
+        love.graphics.setColor(1, 1, 0)
+    elseif color == "purple" then
+        love.graphics.setColor(1, 0, 1)
+    end
+    
+    love.graphics.circle(
+        "fill",
+        x + cellSize/2,
+        y + cellSize/2,
+        cellSize/2 - 2
+    )
+    
+    -- Reset color
+    love.graphics.setColor(1, 1, 1)
 end
 
 return Gem 

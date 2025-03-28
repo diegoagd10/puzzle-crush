@@ -14,4 +14,8 @@ function GraphicsWrapper:rectangle(mode, x, y, width, height)
     love.graphics.rectangle(mode, x, y, width, height)
 end
 
+function GraphicsWrapper:circle(mode, x, y, radius)
+    love.graphics.circle(mode, x, y, radius)
+end
+
 return GraphicsWrapper 

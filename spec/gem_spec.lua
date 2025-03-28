@@ -160,14 +160,14 @@ describe("Gem", function()
         
         -- Mock the graphics wrapper methods
         local originalSetColor = graphics.setColor
-        local originalRectangle = graphics.rectangle
+        local originalCircle = graphics.circle
         
         graphics.setColor = function(self, r, g, b, a)
             table.insert(drawCalls, {type = "setColor", r = r, g = g, b = b, a = a})
         end
         
-        graphics.rectangle = function(self, mode, x, y, width, height)
-            table.insert(drawCalls, {type = "rectangle", mode = mode, x = x, y = y, width = width, height = height})
+        graphics.circle = function(self, mode, x, y, radius)
+            table.insert(drawCalls, {type = "circle", mode = mode, x = x, y = y, radius = radius})
         end
         
         -- Draw the gem
@@ -175,10 +175,10 @@ describe("Gem", function()
         
         -- Restore original methods
         graphics.setColor = originalSetColor
-        graphics.rectangle = originalRectangle
+        graphics.circle = originalCircle
         
         -- Verify draw calls
-        assert.are.equal(3, #drawCalls)  -- Two setColor calls and one rectangle call
+        assert.are.equal(3, #drawCalls)  -- Two setColor calls and one circle call
         
         -- Verify first color was set to red
         assert.are.equal("setColor", drawCalls[1].type)
@@ -187,13 +187,12 @@ describe("Gem", function()
         assert.are.equal(0, drawCalls[1].b)
         assert.are.equal(1, drawCalls[1].a)
         
-        -- Verify rectangle was drawn at correct position and size
-        assert.are.equal("rectangle", drawCalls[2].type)
+        -- Verify circle was drawn at correct position and size
+        assert.are.equal("circle", drawCalls[2].type)
         assert.are.equal("fill", drawCalls[2].mode)
-        assert.are.equal(10, drawCalls[2].x)
-        assert.are.equal(20, drawCalls[2].y)
-        assert.are.equal(50, drawCalls[2].width)
-        assert.are.equal(50, drawCalls[2].height)
+        assert.are.equal(35, drawCalls[2].x)  -- centerX = 10 + 25 (radius)
+        assert.are.equal(45, drawCalls[2].y)  -- centerY = 20 + 25 (radius)
+        assert.are.equal(25, drawCalls[2].radius)  -- radius = min(50, 50) / 2
         
         -- Verify color was reset to white
         assert.are.equal("setColor", drawCalls[3].type)

@@ -10,6 +10,9 @@ describe("GraphicsWrapper", function()
                 end,
                 rectangle = function(mode, x, y, width, height)
                     -- Just call the function, no need to return values
+                end,
+                circle = function(mode, x, y, radius)
+                    -- Just call the function, no need to return values
                 end
             }
         }
@@ -20,6 +23,7 @@ describe("GraphicsWrapper", function()
         -- Mock the graphics wrapper methods
         local originalSetColor = graphics.setColor
         local originalRectangle = graphics.rectangle
+        local originalCircle = graphics.circle
         
         graphics.setColor = function(self, r, g, b, a)
             table.insert(drawCalls, {type = "setColor", r = r, g = g, b = b, a = a})
@@ -27,6 +31,10 @@ describe("GraphicsWrapper", function()
         
         graphics.rectangle = function(self, mode, x, y, width, height)
             table.insert(drawCalls, {type = "rectangle", mode = mode, x = x, y = y, width = width, height = height})
+        end
+
+        graphics.circle = function(self, mode, x, y, radius)
+            table.insert(drawCalls, {type = "circle", mode = mode, x = x, y = y, radius = radius})
         end
         
         -- Test setColor
@@ -47,6 +55,15 @@ describe("GraphicsWrapper", function()
         assert.are.equal(20, drawCalls[2].y)
         assert.are.equal(30, drawCalls[2].width)
         assert.are.equal(40, drawCalls[2].height)
+
+        -- Test circle
+        graphics:circle("fill", 50, 60, 25)
+        assert.are.equal(3, #drawCalls)
+        assert.are.equal("circle", drawCalls[3].type)
+        assert.are.equal("fill", drawCalls[3].mode)
+        assert.are.equal(50, drawCalls[3].x)
+        assert.are.equal(60, drawCalls[3].y)
+        assert.are.equal(25, drawCalls[3].radius)
         
         -- Cleanup
         _G.love = nil

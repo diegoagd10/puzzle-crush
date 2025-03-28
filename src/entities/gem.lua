@@ -10,7 +10,7 @@ setmetatable(Gem, parentMetatable)
 setmetatable(parentMetatable, {__index = MouseInteractable})
 
 -- Constants
-local MOVEMENT_SPEED = 100  -- pixels per second
+local MOVEMENT_SPEED = 550  -- pixels per second
 
 -- Color mapping
 local COLORS = {
@@ -116,10 +116,14 @@ end
 function Gem:draw(graphics)
     -- Set color based on gem's color property
     local color = COLORS[self.color] or COLORS.default
-    graphics:setColor(table.unpack(color))
+    local r, g, b, a = color[1], color[2], color[3], color[4]
+    graphics:setColor(r, g, b, a)
     
-    -- Draw the gem as a filled rectangle
-    graphics:rectangle("fill", self.x, self.y, self.width, self.height)
+    -- Draw the gem as a circle
+    local radius = math.min(self.width, self.height) / 2
+    local centerX = self.x + radius
+    local centerY = self.y + radius
+    graphics:circle("fill", centerX, centerY, radius)
     
     -- Reset color to white
     graphics:setColor(1, 1, 1, 1)

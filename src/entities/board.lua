@@ -211,7 +211,7 @@ function Board:draw(offsetX, offsetY, cellSize)
         )
     end
 
-    -- Draw cells and non-selected gems first
+    -- Draw cells and non-selected/non-animating gems first
     for x = 1, self:getWidth() do
         for y = 1, self:getHeight() do
             -- Draw cell background
@@ -224,9 +224,9 @@ function Board:draw(offsetX, offsetY, cellSize)
                 cellSize
             )
 
-            -- Draw gem if present and not selected
+            -- Draw gem if present and not selected/animating
             local gem = self:getGem(x, y)
-            if gem and gem ~= self.selectedGem then
+            if gem and gem ~= self.selectedGem and gem ~= self.animatingGem then
                 local visualX, visualY = gem:getVisualPosition()
                 gem:draw(
                     offsetX + (visualX-1) * cellSize,
@@ -235,6 +235,16 @@ function Board:draw(offsetX, offsetY, cellSize)
                 )
             end
         end
+    end
+
+    -- Draw animating gem if exists
+    if self.animatingGem then
+        local visualX, visualY = self.animatingGem:getVisualPosition()
+        self.animatingGem:draw(
+            offsetX + (visualX-1) * cellSize,
+            offsetY + (visualY-1) * cellSize,
+            cellSize
+        )
     end
 
     -- Draw selected gem last (on top)

@@ -1,33 +1,31 @@
 local Main = require('src.main')
-local Gem = require('src.entities.gem')
+local BoardScene = require('src.entities.board_scene')
 local GraphicsWrapper = require('src.graphics.graphics_wrapper')
 
 describe('Main Game', function()
     local main
-    local gem
     local graphics
 
     before_each(function()
         main = Main.new()
-        gem = Gem.new()
         graphics = GraphicsWrapper.new()
-        
-        -- Set up a test gem
-        gem:setPosition(100, 100)
-        gem:setDimensions(50, 50)
-        gem:setColor('red')
     end)
 
-    it('should draw a gem on the screen', function()
-        -- Draw the gem
-        gem:draw(graphics)
+    it('should initialize with a board scene', function()
+        local gameObjects = main.boardScene:getGameObjects()
+        assert.equals(700, #gameObjects) -- 70 * 10 gems
+    end)
+
+    it('should update and draw the board scene', function()
+        -- Update the game
+        main:update(0.1) -- Simulate 100ms update
         
-        -- Note: In a real test environment, we would need to verify the actual rendering
-        -- For now, we'll just verify that the gem has the correct properties
-        assert.are.equal(100, gem.x)
-        assert.are.equal(100, gem.y)
-        assert.are.equal(50, gem.width)
-        assert.are.equal(50, gem.height)
-        assert.are.equal('red', gem:getColor())
+        -- Draw the game
+        main:draw()
+        
+        -- Verify that the board scene exists and has the correct number of gems
+        assert.is_not_nil(main.boardScene)
+        local gameObjects = main.boardScene:getGameObjects()
+        assert.equals(700, #gameObjects)
     end)
 end) 

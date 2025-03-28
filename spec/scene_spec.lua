@@ -35,12 +35,14 @@ describe("Scene", function()
         gem:setDimensions(50, 50)
         
         -- Select and move the gem
-        gem:onMousePressed(25, 25)
+        gem:onMousePressed(30, 30)  -- Account for padding
         gem:onMouseMoved(100, 0)
         
         -- Update scene
         scene:update(0.5)
         assert.are.equal(75, gem.x)  -- Should move to target (100) minus half width (25)
+        local visualX = gem:getVisualPosition()
+        assert.are.equal(80, visualX)  -- Visual position includes padding
     end)
 
     it("should draw all game objects", function()
@@ -82,11 +84,11 @@ describe("Scene", function()
         assert.are.equal(0, drawCalls[1].b)
         assert.are.equal(1, drawCalls[1].a)
         
-        -- Verify circle was drawn at correct position and size
+        -- Verify circle was drawn at correct position and size (accounting for padding)
         assert.are.equal("circle", drawCalls[2].type)
         assert.are.equal("fill", drawCalls[2].mode)
-        assert.are.equal(35, drawCalls[2].x)  -- centerX = 10 + 25 (radius)
-        assert.are.equal(45, drawCalls[2].y)  -- centerY = 20 + 25 (radius)
+        assert.are.equal(40, drawCalls[2].x)  -- centerX = (10 + 5) + 25 (radius)
+        assert.are.equal(50, drawCalls[2].y)  -- centerY = (20 + 5) + 25 (radius)
         assert.are.equal(25, drawCalls[2].radius)  -- radius = min(50, 50) / 2
         
         -- Verify color was reset to white
@@ -102,14 +104,16 @@ describe("Scene", function()
         gem:setPosition(0, 0)
         gem:setDimensions(50, 50)
         
-        -- Mouse press inside gem
-        scene:mousepressed(25, 25, 1)
+        -- Mouse press inside gem (accounting for padding)
+        scene:mousepressed(30, 30, 1)
         assert.are.equal("selected", gem:getState())
         
         -- Mouse move
-        scene:mousemoved(100, 0, 75, 0)
+        scene:mousemoved(100, 0, 70, 0)
         scene:update(0.5)
         assert.are.equal(75, gem.x)  -- Should move to target (100) minus half width (25)
+        local visualX = gem:getVisualPosition()
+        assert.are.equal(80, visualX)  -- Visual position includes padding
         
         -- Mouse release
         scene:mousereleased(100, 0, 1)

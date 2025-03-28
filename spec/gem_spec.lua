@@ -10,10 +10,6 @@ describe("Gem", function()
         local gemClassMetatable = getmetatable(Gem)
         local parentMetatable = getmetatable(gemClassMetatable)
         
-        print("Gem metatable:", gemMetatable)
-        print("Gem class metatable:", gemClassMetatable)
-        print("Parent metatable:", parentMetatable)
-        
         assert.is_true(gemMetatable.__index == Gem)
         assert.is_true(gemClassMetatable.__index == GameObject)
         assert.is_true(parentMetatable.__index == MouseInteractable)
@@ -21,8 +17,9 @@ describe("Gem", function()
 
     it("should initialize with default properties", function()
         local gem = Gem.new()
-        assert.are.equal(0, gem.x)
-        assert.are.equal(0, gem.y)
+        local x, y = gem:getPosition()
+        assert.are.equal(0, x)
+        assert.are.equal(0, y)
         assert.are.equal(0, gem.width)
         assert.are.equal(0, gem.height)
         assert.is_nil(gem.color)
@@ -36,6 +33,23 @@ describe("Gem", function()
         local x, y = gem:getPosition()
         assert.are.equal(10, x)
         assert.are.equal(20, y)
+    end)
+
+    it("should get visual position with padding", function()
+        local gem = Gem.new()
+        gem:setPosition(10, 20)
+        local visualX, visualY = gem:getVisualPosition()
+        assert.are.equal(15, visualX)  -- 10 + 5 padding
+        assert.are.equal(25, visualY)  -- 20 + 5 padding
+    end)
+
+    it("should set and get grid position", function()
+        local gem = Gem.new()
+        gem:setDimensions(40, 40)
+        gem:setGridPosition(1, 2)
+        local x, y = gem:getPosition()
+        assert.are.equal(45, x)  -- 1 * (40 + 5)
+        assert.are.equal(90, y)  -- 2 * (40 + 5)
     end)
 
     it("should set and get dimensions", function()
@@ -64,10 +78,11 @@ describe("Gem", function()
         
         assert.are.equal("idle", gem:getState())
         
-        gem:onMousePressed(25, 25)  -- Mouse inside gem
+        -- Mouse inside gem (accounting for padding)
+        gem:onMousePressed(30, 30)  -- Mouse inside gem with padding
         assert.are.equal("selected", gem:getState())
         
-        gem:onMouseReleased(25, 25)
+        gem:onMouseReleased(30, 30)
         assert.are.equal("idle", gem:getState())
     end)
 
@@ -77,7 +92,7 @@ describe("Gem", function()
         gem:setDimensions(50, 50)
         
         -- Select the gem and set initial mouse position
-        gem:onMousePressed(25, 25)
+        gem:onMousePressed(30, 30)  -- Account for padding
         assert.are.equal("selected", gem:getState())
         
         -- Set target position
@@ -86,10 +101,8 @@ describe("Gem", function()
         -- Move for 0.5 seconds
         gem:update(0.5)
         assert.are.equal(75, gem.x)  -- Should move to target (100) minus half width (25)
-        
-        -- Move for another 0.5 seconds
-        gem:update(0.5)
-        assert.are.equal(75, gem.x)  -- Should maintain target position
+        local visualX = gem:getVisualPosition()
+        assert.are.equal(80, visualX)  -- Visual position includes padding
     end)
 
     it("should not move when not selected", function()
@@ -99,7 +112,9 @@ describe("Gem", function()
         -- Update mouse position while not selected
         gem:onMouseMoved(100, 0)
         gem:update(0.5)
-        assert.are.equal(0, gem.x)
+        assert.are.equal(0, gem.x)  -- Position shouldn't change
+        local visualX = gem:getVisualPosition()
+        assert.are.equal(5, visualX)  -- Visual position includes padding
     end)
 
     it("should maintain position when released", function()
@@ -108,15 +123,19 @@ describe("Gem", function()
         gem:setDimensions(50, 50)
         
         -- Select and move
-        gem:onMousePressed(25, 25)
+        gem:onMousePressed(30, 30)  -- Account for padding
         gem:onMouseMoved(100, 0)
         gem:update(1.0)  -- Move for 1 second
-        assert.are.equal(75, gem.x)  -- Should reach target
+        assert.are.equal(75, gem.x)  -- Should reach target (100) minus half width (25)
+        local visualX = gem:getVisualPosition()
+        assert.are.equal(80, visualX)  -- Visual position includes padding
         
         -- Release and update
         gem:onMouseReleased(100, 0)
         gem:update(0.5)
         assert.are.equal(75, gem.x)  -- Should maintain position
+        visualX = gem:getVisualPosition()
+        assert.are.equal(80, visualX)  -- Visual position includes padding
     end)
 
     it("should only change state to selected when mouse is over the gem", function()
@@ -125,27 +144,27 @@ describe("Gem", function()
         gem:setDimensions(50, 50)
         
         -- Mouse press outside gem
-        gem:onMousePressed(75, 25)
+        gem:onMousePressed(80, 30)
         assert.are.equal("idle", gem:getState())
         
-        -- Mouse press inside gem
-        gem:onMousePressed(25, 25)
+        -- Mouse press inside gem (accounting for padding)
+        gem:onMousePressed(30, 30)
         assert.are.equal("selected", gem:getState())
     end)
 
-    it("should detect if mouse is over the gem", function()
+    it("should detect if mouse is over the gem with padding", function()
         local gem = Gem.new()
         gem:setPosition(0, 0)
         gem:setDimensions(50, 50)
         
-        -- Mouse inside gem
-        assert.is_true(gem:isMouseOver(25, 25))
+        -- Mouse inside gem (accounting for padding)
+        assert.is_true(gem:isMouseOver(30, 30))
         
         -- Mouse outside gem
-        assert.is_false(gem:isMouseOver(75, 25))  -- outside right
-        assert.is_false(gem:isMouseOver(25, 75))  -- outside bottom
-        assert.is_false(gem:isMouseOver(-25, 25)) -- outside left
-        assert.is_false(gem:isMouseOver(25, -25)) -- outside top
+        assert.is_false(gem:isMouseOver(80, 30))  -- outside right
+        assert.is_false(gem:isMouseOver(30, 80))  -- outside bottom
+        assert.is_false(gem:isMouseOver(-20, 30)) -- outside left
+        assert.is_false(gem:isMouseOver(30, -20)) -- outside top
     end)
 
     it("should draw itself with the correct color and dimensions", function()
@@ -187,11 +206,11 @@ describe("Gem", function()
         assert.are.equal(0, drawCalls[1].b)
         assert.are.equal(1, drawCalls[1].a)
         
-        -- Verify circle was drawn at correct position and size
+        -- Verify circle was drawn at correct position and size (accounting for padding)
         assert.are.equal("circle", drawCalls[2].type)
         assert.are.equal("fill", drawCalls[2].mode)
-        assert.are.equal(35, drawCalls[2].x)  -- centerX = 10 + 25 (radius)
-        assert.are.equal(45, drawCalls[2].y)  -- centerY = 20 + 25 (radius)
+        assert.are.equal(40, drawCalls[2].x)  -- centerX = (10 + 5) + 25 (radius)
+        assert.are.equal(50, drawCalls[2].y)  -- centerY = (20 + 5) + 25 (radius)
         assert.are.equal(25, drawCalls[2].radius)  -- radius = min(50, 50) / 2
         
         -- Verify color was reset to white

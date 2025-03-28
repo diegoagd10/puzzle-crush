@@ -11,6 +11,7 @@ setmetatable(parentMetatable, {__index = MouseInteractable})
 
 -- Constants
 local MOVEMENT_SPEED = 550  -- pixels per second
+local PADDING = 5  -- padding between gems
 
 -- Color mapping
 local COLORS = {
@@ -43,6 +44,21 @@ function Gem:getPosition()
     return self.x, self.y
 end
 
+function Gem:setGridPosition(col, row)
+    local x = col * (self.width + PADDING)
+    local y = row * (self.height + PADDING)
+    self:setPosition(x, y)
+end
+
+function Gem:getGridPosition()
+    return math.floor(self.x / (self.width + PADDING)), 
+           math.floor(self.y / (self.height + PADDING))
+end
+
+function Gem:getVisualPosition()
+    return self.x + PADDING, self.y + PADDING
+end
+
 function Gem:setDimensions(width, height)
     self.width = width
     self.height = height
@@ -69,10 +85,11 @@ function Gem:getState()
 end
 
 function Gem:isMouseOver(x, y)
-    return x >= self.x and 
-           x <= self.x + self.width and 
-           y >= self.y and 
-           y <= self.y + self.height
+    local visualX, visualY = self:getVisualPosition()
+    return x >= visualX and 
+           x <= visualX + self.width and 
+           y >= visualY and 
+           y <= visualY + self.height
 end
 
 function Gem:onMousePressed(x, y)
@@ -119,10 +136,11 @@ function Gem:draw(graphics)
     local r, g, b, a = color[1], color[2], color[3], color[4]
     graphics:setColor(r, g, b, a)
     
-    -- Draw the gem as a circle
+    -- Draw the gem as a circle using visual position
     local radius = math.min(self.width, self.height) / 2
-    local centerX = self.x + radius
-    local centerY = self.y + radius
+    local visualX, visualY = self:getVisualPosition()
+    local centerX = visualX + radius
+    local centerY = visualY + radius
     graphics:circle("fill", centerX, centerY, radius)
     
     -- Reset color to white

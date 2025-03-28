@@ -100,9 +100,9 @@ describe("Gem", function()
         
         -- Move for 0.5 seconds
         gem:update(0.5)
-        assert.are.equal(75, gem.x)  -- Should move to target (100) minus half width (25)
+        assert.are.equal(50, gem.x)  -- Should move to maximum allowed (50)
         local visualX = gem:getVisualPosition()
-        assert.are.equal(80, visualX)  -- Visual position includes padding
+        assert.are.equal(55, visualX)  -- Visual position includes padding
     end)
 
     it("should not move when not selected", function()
@@ -126,7 +126,7 @@ describe("Gem", function()
         gem:onMousePressed(30, 30)  -- Account for padding
         gem:onMouseMoved(100, 0)
         gem:update(1.0)  -- Move for 1 second
-        assert.are.equal(75, gem.x)  -- Should reach target (100) minus half width (25)
+        assert.are.equal(50, gem.x)  -- Should reach maximum allowed (50)
         
         -- Release over invalid position (outside grid)
         gem:onMouseReleased(200, 0)
@@ -143,7 +143,7 @@ describe("Gem", function()
         gem:onMousePressed(30, 30)  -- Account for padding
         gem:onMouseMoved(100, 0)
         gem:update(1.0)  -- Move for 1 second
-        assert.are.equal(75, gem.x)  -- Should reach target (100) minus half width (25)
+        assert.are.equal(60, gem.x)  -- Should reach maximum allowed (10 + 50)
         
         -- Release over invalid position (outside grid)
         gem:onMouseReleased(200, 0)
@@ -232,5 +232,25 @@ describe("Gem", function()
         assert.are.equal(1, drawCalls[3].g)
         assert.are.equal(1, drawCalls[3].b)
         assert.are.equal(1, drawCalls[3].a)
+    end)
+    
+    it("should limit movement to twice the gem's width", function()
+        local gem = Gem.new()
+        gem:setPosition(0, 0)
+        gem:setDimensions(50, 50)
+        
+        -- Select the gem
+        gem:onMousePressed(30, 30)
+        assert.are.equal("selected", gem:getState())
+        
+        -- Try to move beyond the limit to the right
+        gem:onMouseMoved(200, 0)  -- This would be beyond 1x width (50)
+        gem:update(1.0)
+        assert.are.equal(50, gem.x)  -- Should be limited to 1x width (50)
+        
+        -- Try to move beyond the limit to the left
+        gem:onMouseMoved(-100, 0)  -- This would be beyond 1x width to the left
+        gem:update(1.0)
+        assert.are.equal(-50, gem.x)  -- Should be limited to -1x width (-50)
     end)
 end) 

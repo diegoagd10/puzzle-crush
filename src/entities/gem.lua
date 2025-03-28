@@ -125,6 +125,14 @@ function Gem:update(delta)
         -- Calculate target position (centered on mouse)
         local targetX = self._mouseX - (self.width / 2)
         
+        -- Calculate the maximum allowed movement (1x width)
+        local maxMovement = self.width
+        
+        -- Clamp the target position to the maximum allowed movement
+        local maxX = self._originalX + maxMovement
+        local minX = self._originalX - maxMovement
+        targetX = math.max(minX, math.min(maxX, targetX))
+        
         -- Calculate distance to move this frame
         local distance = MOVEMENT_SPEED * delta
         

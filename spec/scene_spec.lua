@@ -40,9 +40,9 @@ describe("Scene", function()
         
         -- Update scene
         scene:update(0.5)
-        assert.are.equal(75, gem.x)  -- Should move to target (100) minus half width (25)
+        assert.are.equal(50, gem.x)  -- Limited by maximum allowed movement (width = 50)
         local visualX = gem:getVisualPosition()
-        assert.are.equal(80, visualX)  -- Visual position includes padding
+        assert.are.equal(55, visualX)  -- Visual position includes padding
     end)
 
     it("should draw all game objects", function()
@@ -111,9 +111,9 @@ describe("Scene", function()
         -- Mouse move
         scene:mousemoved(100, 0, 70, 0)
         scene:update(0.5)
-        assert.are.equal(75, gem.x)  -- Should move to target (100) minus half width (25)
+        assert.are.equal(50, gem.x)  -- Limited by maximum allowed movement (width = 50)
         local visualX = gem:getVisualPosition()
-        assert.are.equal(80, visualX)  -- Visual position includes padding
+        assert.are.equal(55, visualX)  -- Visual position includes padding
         
         -- Mouse release
         scene:mousereleased(100, 0, 1)

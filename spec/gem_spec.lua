@@ -253,4 +253,91 @@ describe("Gem", function()
         gem:update(1.0)
         assert.are.equal(-50, gem.x)  -- Should be limited to -1x width (-50)
     end)
+
+    it("should move vertically when gem is selected and mouse moves vertically", function()
+        local gem = Gem.new()
+        gem:setPosition(0, 0)
+        gem:setDimensions(50, 50)
+        
+        -- Select the gem at center position
+        -- The center of gem is at (25, 25) when accounting for padding and dimensions
+        gem:onMousePressed(25, 25)
+        assert.are.equal("selected", gem:getState())
+        
+        -- Move mouse vertically only, keeping X at center position
+        gem:onMouseMoved(25, 100)
+        gem:update(1.0)
+        assert.are.equal(0, gem.x)  -- X position unchanged
+        assert.are.equal(50, gem.y)  -- Y position should move up to height limit
+        
+        -- Move mouse vertically in opposite direction, keeping X at center position
+        gem:onMouseMoved(25, -50)
+        gem:update(1.0)
+        assert.are.equal(0, gem.x)  -- X position unchanged
+        assert.are.equal(-50, gem.y)  -- Y position should move down to negative height limit
+    end)
+
+    it("should restrict movement to either horizontal or vertical, not both", function()
+        local gem = Gem.new()
+        gem:setPosition(0, 0)
+        gem:setDimensions(50, 50)
+        
+        -- Select the gem at center position
+        gem:onMousePressed(25, 25)
+        assert.are.equal("selected", gem:getState())
+        
+        -- Move mouse diagonally at 30 degrees (should result in horizontal movement)
+        -- cos(30) = 0.866, sin(30) = 0.5, so we'll move more in X than Y
+        gem:onMouseMoved(80, 50)
+        gem:update(1.0)
+        
+        -- Should move only horizontally
+        assert.are.equal(50, gem.x)
+        assert.are.equal(0, gem.y)
+        
+        -- Reset position and selection
+        gem:onMouseReleased(0, 0)  -- Release to reset state
+        gem:setPosition(0, 0)      -- Reset position
+        gem:onMousePressed(25, 25) -- Select again
+        
+        -- Move mouse diagonally at 60 degrees (should result in vertical movement)
+        -- cos(60) = 0.5, sin(60) = 0.866, so we'll move more in Y than X
+        gem:onMouseMoved(50, 80)
+        gem:update(1.0)
+        
+        -- Should move only vertically
+        assert.are.equal(0, gem.x)
+        assert.are.equal(50, gem.y)
+    end)
+    
+    it("should not move when clicked off-center", function()
+        local gem = Gem.new()
+        gem:setPosition(0, 0)
+        gem:setDimensions(50, 50)
+        
+        -- Position is initially at origin
+        assert.are.equal(0, gem.x)
+        assert.are.equal(0, gem.y)
+        
+        -- Click on the gem at a point offset from center
+        -- Center is at (25 + 5, 25 + 5) = (30, 30)
+        -- Clicking at (10, 10) creates an offset of (-20, -20)
+        gem:onMousePressed(10, 10)
+        assert.are.equal("selected", gem:getState())
+        
+        -- Update without moving the mouse
+        gem:update(1.0)
+        
+        -- Gem should not move just from being clicked off-center
+        assert.are.equal(0, gem.x)
+        assert.are.equal(0, gem.y)
+        
+        -- Now move the mouse while maintaining the same offset from center
+        gem:onMouseMoved(60, 10)  -- Move 50 pixels right, 0 vertical
+        gem:update(1.0)
+        
+        -- Should move horizontally (angle is 0 degrees)
+        assert.are.equal(50, gem.x)  -- Moves to the max horizontal position
+        assert.are.equal(0, gem.y)   -- No vertical movement
+    end)
 end) 

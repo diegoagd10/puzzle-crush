@@ -34,6 +34,8 @@ function Gem.new()
     self._mouseY = 0     -- Store current mouse Y position
     self._originalX = 0  -- Store original X position
     self._originalY = 0  -- Store original Y position
+    self._offsetX = 0    -- Store offset between mouse and gem center X
+    self._offsetY = 0    -- Store offset between mouse and gem center Y
     self._isValidRelease = false  -- Flag to track if release is over valid position
     return self
 end
@@ -98,9 +100,21 @@ end
 function Gem:onMousePressed(x, y)
     if self:isMouseOver(x, y) then
         self._state = "selected"
+        
+        -- Calculate the center of the gem (accounting for padding)
+        local centerX = self.x + PADDING + (self.width / 2)
+        local centerY = self.y + PADDING + (self.height / 2)
+        
+        -- Store initial offset from mouse to gem center
+        self._offsetX = x - centerX
+        self._offsetY = y - centerY
+        
+        -- Store current mouse position
         self._mouseX = x
         self._mouseY = y
-        self._originalX = self.x  -- Store original position when selected
+        
+        -- Store original position for bounds checking
+        self._originalX = self.x
         self._originalY = self.y
     end
 end
@@ -122,26 +136,75 @@ end
 
 function Gem:update(delta)
     if self._state == "selected" then
-        -- Calculate target position (centered on mouse)
-        local targetX = self._mouseX - (self.width / 2)
-        
-        -- Calculate the maximum allowed movement (1x width)
-        local maxMovement = self.width
-        
-        -- Clamp the target position to the maximum allowed movement
-        local maxX = self._originalX + maxMovement
-        local minX = self._originalX - maxMovement
-        targetX = math.max(minX, math.min(maxX, targetX))
-        
-        -- Calculate distance to move this frame
-        local distance = MOVEMENT_SPEED * delta
-        
-        -- Move towards target position
+        self:updateDraggedPosition(delta)
+    end
+end
+
+function Gem:updateDraggedPosition(delta)
+    -- Calculate where the center of the gem should be (removing the initial offset)
+    local targetCenterX = self._mouseX - self._offsetX
+    local targetCenterY = self._mouseY - self._offsetY
+    
+    -- Convert from center coordinates to top-left coordinates
+    local targetX = targetCenterX - PADDING - (self.width / 2)
+    local targetY = targetCenterY - PADDING - (self.height / 2)
+    
+    -- Calculate the maximum allowed movement (1x width/height)
+    local maxMovementX = self.width
+    local maxMovementY = self.height
+    
+    -- Clamp the target position to the maximum allowed movement
+    local maxX = self._originalX + maxMovementX
+    local minX = self._originalX - maxMovementX
+    targetX = math.max(minX, math.min(maxX, targetX))
+    
+    local maxY = self._originalY + maxMovementY
+    local minY = self._originalY - maxMovementY
+    targetY = math.max(minY, math.min(maxY, targetY))
+    
+    -- Calculate the vector from origin to target position
+    local vectorX = targetX - self._originalX
+    local vectorY = targetY - self._originalY
+    
+    -- Calculate the angle of movement using atan2 (returns angle in range -π to π)
+    local angle = math.atan2(vectorY, vectorX)
+    
+    -- Convert to degrees for easier reasoning (0-360 degrees)
+    local degrees = (angle * 180 / math.pi)
+    if degrees < 0 then degrees = degrees + 360 end
+    
+    -- Calculate distance to move this frame
+    local distance = MOVEMENT_SPEED * delta
+    
+    -- Determine movement direction based on angle sectors:
+    -- Horizontal sectors: -45° to 45° (or 315° to 45°) and 135° to 225°
+    -- Vertical sectors: 45° to 135° and 225° to 315°
+    --
+    --            90° (up)
+    --              ^
+    --              |
+    --  180° <--   +   --> 0°/360°
+    --              |
+    --              v
+    --           270° (down)
+    if (degrees >= 315 or degrees < 45) or (degrees >= 135 and degrees < 225) then
+        -- Horizontal movement (right/left directions)
         if self.x < targetX then
             self.x = math.min(self.x + distance, targetX)
         elseif self.x > targetX then
             self.x = math.max(self.x - distance, targetX)
         end
+        -- Keep vertical position at original
+        self.y = self._originalY
+    else
+        -- Vertical movement (up/down directions)
+        if self.y < targetY then
+            self.y = math.min(self.y + distance, targetY)
+        elseif self.y > targetY then
+            self.y = math.max(self.y - distance, targetY)
+        end
+        -- Keep horizontal position at original
+        self.x = self._originalX
     end
 end
 

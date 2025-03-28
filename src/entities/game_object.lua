@@ -11,15 +11,12 @@ function GameObject.new()
 end
 
 function GameObject:load()
-    -- implementation
 end
 
 function GameObject:update(delta)
-    -- implementation
 end
 
 function GameObject:draw()
-    -- implementation
 end
 
 return GameObject

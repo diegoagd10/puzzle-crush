@@ -27,14 +27,17 @@ function BoardScene:initializeBoard()
             gem:setDimensions(GEM_SIZE, GEM_SIZE)
             gem:setGridPosition(col, row)
             
-            -- Set random color
-            local randomColor = COLORS[love.math.random(#COLORS)]
-            gem:setColor(randomColor)
-            gem:setType(randomColor)
+            self:assignRandomColorToGem(gem)
             
             self:addGameObject(gem)
         end
     end
+end
+
+function BoardScene:assignRandomColorToGem(gem)
+    local randomColor = COLORS[love.math.random(#COLORS)]
+    gem:setColor(randomColor)
+    gem:setType(randomColor)
 end
 
 return BoardScene 

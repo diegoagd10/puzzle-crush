@@ -100,23 +100,25 @@ end
 function Gem:onMousePressed(x, y)
     if self:isMouseOver(x, y) then
         self._state = "selected"
-        
-        -- Calculate the center of the gem (accounting for padding)
-        local centerX = self.x + PADDING + (self.width / 2)
-        local centerY = self.y + PADDING + (self.height / 2)
-        
-        -- Store initial offset from mouse to gem center
-        self._offsetX = x - centerX
-        self._offsetY = y - centerY
-        
-        -- Store current mouse position
-        self._mouseX = x
-        self._mouseY = y
-        
-        -- Store original position for bounds checking
-        self._originalX = self.x
-        self._originalY = self.y
+        self:storeMouseOffsetFromCenter(x, y)
+        self:storeOriginalPosition()
     end
+end
+
+function Gem:storeMouseOffsetFromCenter(x, y)
+    local centerX = self.x + PADDING + (self.width / 2)
+    local centerY = self.y + PADDING + (self.height / 2)
+    
+    self._offsetX = x - centerX
+    self._offsetY = y - centerY
+    
+    self._mouseX = x
+    self._mouseY = y
+end
+
+function Gem:storeOriginalPosition()
+    self._originalX = self.x
+    self._originalY = self.y
 end
 
 function Gem:onMouseMoved(x, y)
@@ -126,12 +128,20 @@ end
 
 function Gem:onMouseReleased(x, y)
     if self._state == "selected" then
-        self._state = "idle"
-        self._mouseX = 0
-        self._mouseY = 0
-        self.x = self._originalX
-        self.y = self._originalY
+        self:resetGemState()
+        self:resetToOriginalPosition()
     end
+end
+
+function Gem:resetGemState()
+    self._state = "idle"
+    self._mouseX = 0
+    self._mouseY = 0
+end
+
+function Gem:resetToOriginalPosition()
+    self.x = self._originalX
+    self.y = self._originalY
 end
 
 function Gem:update(delta)
@@ -141,87 +151,107 @@ function Gem:update(delta)
 end
 
 function Gem:updateDraggedPosition(delta)
-    -- Calculate where the center of the gem should be (removing the initial offset)
+    local targetCenterX, targetCenterY = self:calculateTargetCenter()
+    local targetX, targetY = self:convertToTopLeftCoordinates(targetCenterX, targetCenterY)
+    local clampedTargetX, clampedTargetY = self:clampTargetPosition(targetX, targetY)
+    local angle = self:calculateMovementAngle(clampedTargetX, clampedTargetY)
+    local distance = self:calculateMovementDistance(delta)
+    
+    self:moveGemInDirectionSector(angle, clampedTargetX, clampedTargetY, distance)
+end
+
+function Gem:calculateTargetCenter()
     local targetCenterX = self._mouseX - self._offsetX
     local targetCenterY = self._mouseY - self._offsetY
-    
-    -- Convert from center coordinates to top-left coordinates
-    local targetX = targetCenterX - PADDING - (self.width / 2)
-    local targetY = targetCenterY - PADDING - (self.height / 2)
-    
-    -- Calculate the maximum allowed movement (1x width/height)
+    return targetCenterX, targetCenterY
+end
+
+function Gem:convertToTopLeftCoordinates(centerX, centerY)
+    local targetX = centerX - PADDING - (self.width / 2)
+    local targetY = centerY - PADDING - (self.height / 2)
+    return targetX, targetY
+end
+
+function Gem:clampTargetPosition(targetX, targetY)
     local maxMovementX = self.width
     local maxMovementY = self.height
     
-    -- Clamp the target position to the maximum allowed movement
     local maxX = self._originalX + maxMovementX
     local minX = self._originalX - maxMovementX
-    targetX = math.max(minX, math.min(maxX, targetX))
+    local clampedX = math.max(minX, math.min(maxX, targetX))
     
     local maxY = self._originalY + maxMovementY
     local minY = self._originalY - maxMovementY
-    targetY = math.max(minY, math.min(maxY, targetY))
+    local clampedY = math.max(minY, math.min(maxY, targetY))
     
-    -- Calculate the vector from origin to target position
+    return clampedX, clampedY
+end
+
+function Gem:calculateMovementAngle(targetX, targetY)
     local vectorX = targetX - self._originalX
     local vectorY = targetY - self._originalY
     
-    -- Calculate the angle of movement using atan2 (returns angle in range -π to π)
     local angle = math.atan2(vectorY, vectorX)
-    
-    -- Convert to degrees for easier reasoning (0-360 degrees)
     local degrees = (angle * 180 / math.pi)
     if degrees < 0 then degrees = degrees + 360 end
     
-    -- Calculate distance to move this frame
-    local distance = MOVEMENT_SPEED * delta
-    
-    -- Determine movement direction based on angle sectors:
-    -- Horizontal sectors: -45° to 45° (or 315° to 45°) and 135° to 225°
-    -- Vertical sectors: 45° to 135° and 225° to 315°
-    --
-    --            90° (up)
-    --              ^
-    --              |
-    --  180° <--   +   --> 0°/360°
-    --              |
-    --              v
-    --           270° (down)
-    if (degrees >= 315 or degrees < 45) or (degrees >= 135 and degrees < 225) then
-        -- Horizontal movement (right/left directions)
-        if self.x < targetX then
-            self.x = math.min(self.x + distance, targetX)
-        elseif self.x > targetX then
-            self.x = math.max(self.x - distance, targetX)
-        end
-        -- Keep vertical position at original
+    return degrees
+end
+
+function Gem:calculateMovementDistance(delta)
+    return MOVEMENT_SPEED * delta
+end
+
+function Gem:moveGemInDirectionSector(angleDegrees, targetX, targetY, distance)
+    local isHorizontalSector = (angleDegrees >= 315 or angleDegrees < 45) or 
+                             (angleDegrees >= 135 and angleDegrees < 225)
+                             
+    if isHorizontalSector then
+        self:moveGemHorizontally(targetX, distance)
         self.y = self._originalY
     else
-        -- Vertical movement (up/down directions)
-        if self.y < targetY then
-            self.y = math.min(self.y + distance, targetY)
-        elseif self.y > targetY then
-            self.y = math.max(self.y - distance, targetY)
-        end
-        -- Keep horizontal position at original
+        self:moveGemVertically(targetY, distance)
         self.x = self._originalX
     end
 end
 
+function Gem:moveGemHorizontally(targetX, distance)
+    if self.x < targetX then
+        self.x = math.min(self.x + distance, targetX)
+    elseif self.x > targetX then
+        self.x = math.max(self.x - distance, targetX)
+    end
+end
+
+function Gem:moveGemVertically(targetY, distance)
+    if self.y < targetY then
+        self.y = math.min(self.y + distance, targetY)
+    elseif self.y > targetY then
+        self.y = math.max(self.y - distance, targetY)
+    end
+end
+
 function Gem:draw(graphics)
-    -- Set color based on gem's color property
+    self:setGemColor(graphics)
+    self:drawGemCircle(graphics)
+    self:resetGraphicsColor(graphics)
+end
+
+function Gem:setGemColor(graphics)
     local color = COLORS[self.color] or COLORS.default
     local r, g, b, a = color[1], color[2], color[3], color[4]
     graphics:setColor(r, g, b, a)
-    
-    -- Draw the gem as a circle using visual position
+end
+
+function Gem:drawGemCircle(graphics)
     local radius = math.min(self.width, self.height) / 2
     local visualX, visualY = self:getVisualPosition()
     local centerX = visualX + radius
     local centerY = visualY + radius
     graphics:circle("fill", centerX, centerY, radius)
-    
-    -- Reset color to white
+end
+
+function Gem:resetGraphicsColor(graphics)
     graphics:setColor(1, 1, 1, 1)
 end
 

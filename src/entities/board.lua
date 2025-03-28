@@ -1,6 +1,8 @@
 local Board = {}
 Board.__index = Board
 
+local Animation = require("src.entities.animation")
+
 -- Constants for board dimensions
 local BOARD_WIDTH = 7
 local BOARD_HEIGHT = 10
@@ -21,17 +23,13 @@ function Board.new(randomFn)
     -- Store random function or use love.math.random if available
     self.randomFn = randomFn or (love and love.math.random or math.random)
     
-    -- Add selection and animation tracking
+    -- Add selection tracking
     self.selectedGem = nil
     self.selectedX = nil
     self.selectedY = nil
     
-    -- Add animation properties
-    self.animatingGem = nil
-    self.startX = nil
-    self.targetX = nil
-    self.animationTime = 0
-    self.animationDuration = 0.2 -- Duration in seconds
+    -- Replace old animation properties with new Animation instance
+    self.currentAnimation = nil
     
     return self
 end
@@ -121,7 +119,7 @@ function Board:selectGem(x, y)
         self.selectedY = y
         if self.selectedGem then
             self.selectedGem:setSelected(true)
-            self.startX = x
+            self.selectedX = x
         end
     end
 end
@@ -145,40 +143,37 @@ end
 
 function Board:update(dt)
     -- Handle gem return animation
-    if self.animatingGem then
-        self.animationTime = self.animationTime + dt
+    if self.currentAnimation and self.animatingGem then
+        self.currentAnimation:update(dt)
         
-        -- Calculate progress (0 to 1)
-        local progress = math.min(self.animationTime / self.animationDuration, 1)
-        
-        -- Linear interpolation between start and target position
-        local newX = self.startX + (self.targetX - self.startX) * progress
+        -- Update gem position
+        local newX = self.currentAnimation:getCurrentValue()
         local _, gridY = self.animatingGem:getPosition()
-        
-        -- Fix: Round the position to avoid floating point issues
-        newX = math.floor(newX * 100) / 100
         self.animatingGem:setVisualPosition(newX, gridY)
         
         -- Check if animation is complete
-        if progress >= 1 then
+        if self.currentAnimation:isComplete() then
             -- Ensure final position is exactly on grid
-            self.animatingGem:setVisualPosition(self.targetX, gridY)
+            local finalX, _ = self.animatingGem:getPosition()
+            self.animatingGem:setVisualPosition(finalX, gridY)
             self.animatingGem = nil
-            self.animationTime = 0
+            self.currentAnimation = nil
         end
     end
 end
 
 function Board:releaseGem()
     if self.selectedGem then
-        -- Start return animation
-        self.animatingGem = self.selectedGem
+        -- Create new animation for gem return
         local visualX, _ = self.selectedGem:getVisualPosition()
-        self.startX = visualX
-        self.targetX = self.selectedX
-        self.animationTime = 0
+        self.currentAnimation = Animation.new({
+            startValue = visualX,
+            endValue = self.selectedX,
+            duration = 0.2 -- Keep same duration as before
+        })
         
         self.selectedGem:setSelected(false)
+        self.animatingGem = self.selectedGem -- Keep track of which gem is animating
         self.selectedGem = nil
         self.selectedX = nil
         self.selectedY = nil

@@ -5,38 +5,38 @@ local Gem = {}
 Gem.__index = Gem
 
 -- Set up multiple inheritance
-local parentMetatable = {__index = GameObject}
+local parentMetatable = { __index = GameObject }
 setmetatable(Gem, parentMetatable)
-setmetatable(parentMetatable, {__index = MouseInteractable})
+setmetatable(parentMetatable, { __index = MouseInteractable })
 
 -- Constants
-local MOVEMENT_SPEED = 550  -- pixels per second
-local PADDING = 5  -- padding between gems
+local MOVEMENT_SPEED = 550 -- pixels per second
+local PADDING = 5          -- padding between gems
 
 -- Color mapping
 local COLORS = {
-    red = {1, 0, 0, 1},
-    blue = {0, 0, 1, 1},
-    green = {0, 1, 0, 1},
-    yellow = {1, 1, 0, 1},
-    purple = {1, 0, 1, 1},
-    orange = {1, 0.5, 0, 1},
-    default = {0.5, 0.5, 0.5, 1}  -- gray for unset color
+    red = { 1, 0, 0, 1 },
+    blue = { 0, 0, 1, 1 },
+    green = { 0, 1, 0, 1 },
+    yellow = { 1, 1, 0, 1 },
+    purple = { 1, 0, 1, 1 },
+    orange = { 1, 0.5, 0, 1 },
+    default = { 0.5, 0.5, 0.5, 1 } -- gray for unset color
 }
 
 function Gem.new()
-    local self = GameObject.new()  -- Create a new GameObject instance
-    setmetatable(self, Gem)        -- Set the metatable to Gem
+    local self = GameObject.new() -- Create a new GameObject instance
+    setmetatable(self, Gem)       -- Set the metatable to Gem
     self.color = nil
     self.type = nil
-    self._state = "idle"  -- Using underscore to indicate private property
-    self._mouseX = 0     -- Store current mouse X position
-    self._mouseY = 0     -- Store current mouse Y position
-    self._originalX = 0  -- Store original X position
-    self._originalY = 0  -- Store original Y position
-    self._offsetX = 0    -- Store offset between mouse and gem center X
-    self._offsetY = 0    -- Store offset between mouse and gem center Y
-    self._isValidRelease = false  -- Flag to track if release is over valid position
+    self._state = "idle"         -- Using underscore to indicate private property
+    self._mouseX = 0             -- Store current mouse X position
+    self._mouseY = 0             -- Store current mouse Y position
+    self._originalX = 0          -- Store original X position
+    self._originalY = 0          -- Store original Y position
+    self._offsetX = 0            -- Store offset between mouse and gem center X
+    self._offsetY = 0            -- Store offset between mouse and gem center Y
+    self._isValidRelease = false -- Flag to track if release is over valid position
     return self
 end
 
@@ -56,8 +56,8 @@ function Gem:setGridPosition(col, row)
 end
 
 function Gem:getGridPosition()
-    return math.floor(self.x / (self.width + PADDING)), 
-           math.floor(self.y / (self.height + PADDING))
+    return math.floor(self.x / (self.width + PADDING)),
+        math.floor(self.y / (self.height + PADDING))
 end
 
 function Gem:getVisualPosition()
@@ -91,10 +91,10 @@ end
 
 function Gem:isMouseOver(x, y)
     local visualX, visualY = self:getVisualPosition()
-    return x >= visualX and 
-           x <= visualX + self.width and 
-           y >= visualY and 
-           y <= visualY + self.height
+    return x >= visualX and
+        x <= visualX + self.width and
+        y >= visualY and
+        y <= visualY + self.height
 end
 
 function Gem:onMousePressed(x, y)
@@ -108,10 +108,10 @@ end
 function Gem:storeMouseOffsetFromCenter(x, y)
     local centerX = self.x + PADDING + (self.width / 2)
     local centerY = self.y + PADDING + (self.height / 2)
-    
+
     self._offsetX = x - centerX
     self._offsetY = y - centerY
-    
+
     self._mouseX = x
     self._mouseY = y
 end
@@ -156,7 +156,7 @@ function Gem:updateDraggedPosition(delta)
     local clampedTargetX, clampedTargetY = self:clampTargetPosition(targetX, targetY)
     local angle = self:calculateMovementAngle(clampedTargetX, clampedTargetY)
     local distance = self:calculateMovementDistance(delta)
-    
+
     self:moveGemInDirectionSector(angle, clampedTargetX, clampedTargetY, distance)
 end
 
@@ -175,26 +175,26 @@ end
 function Gem:clampTargetPosition(targetX, targetY)
     local maxMovementX = self.width
     local maxMovementY = self.height
-    
+
     local maxX = self._originalX + maxMovementX
     local minX = self._originalX - maxMovementX
     local clampedX = math.max(minX, math.min(maxX, targetX))
-    
+
     local maxY = self._originalY + maxMovementY
     local minY = self._originalY - maxMovementY
     local clampedY = math.max(minY, math.min(maxY, targetY))
-    
+
     return clampedX, clampedY
 end
 
 function Gem:calculateMovementAngle(targetX, targetY)
     local vectorX = targetX - self._originalX
     local vectorY = targetY - self._originalY
-    
+
     local angle = math.atan2(vectorY, vectorX)
     local degrees = (angle * 180 / math.pi)
     if degrees < 0 then degrees = degrees + 360 end
-    
+
     return degrees
 end
 
@@ -203,9 +203,10 @@ function Gem:calculateMovementDistance(delta)
 end
 
 function Gem:moveGemInDirectionSector(angleDegrees, targetX, targetY, distance)
-    local isHorizontalSector = (angleDegrees >= 315 or angleDegrees < 45) or 
-                             (angleDegrees >= 135 and angleDegrees < 225)
-                             
+    -- Consider movement more horizontal if the angle is closer to 0/180 than 90/270
+    local normalizedAngle = angleDegrees % 180
+    local isHorizontalSector = normalizedAngle < 45 or normalizedAngle > 135
+
     if isHorizontalSector then
         self:moveGemHorizontally(targetX, distance)
         self.y = self._originalY

@@ -13,6 +13,12 @@ describe("GraphicsWrapper", function()
                 end,
                 circle = function(mode, x, y, radius)
                     -- Just call the function, no need to return values
+                end,
+                line = function(x1, y1, x2, y2)
+                    -- Just call the function, no need to return values
+                end,
+                setLineWidth = function(width)
+                    -- Just call the function, no need to return values
                 end
             }
         }
@@ -64,6 +70,57 @@ describe("GraphicsWrapper", function()
         assert.are.equal(50, drawCalls[3].x)
         assert.are.equal(60, drawCalls[3].y)
         assert.are.equal(25, drawCalls[3].radius)
+        
+        -- Cleanup
+        _G.love = nil
+    end)
+
+    it('should provide a method to draw circles', function()
+        -- Mock love.graphics for this test
+        _G.love = {
+            graphics = {
+                circle = function(mode, x, y, radius) end
+            }
+        }
+        
+        local graphics = GraphicsWrapper.new()
+        assert.has_no.errors(function()
+            graphics:circle("fill", 100, 100, 50)
+        end)
+        
+        -- Cleanup
+        _G.love = nil
+    end)
+
+    it('should provide a method to draw lines', function()
+        -- Mock love.graphics for this test
+        _G.love = {
+            graphics = {
+                line = function(x1, y1, x2, y2) end
+            }
+        }
+        
+        local graphics = GraphicsWrapper.new()
+        assert.has_no.errors(function()
+            graphics:line(0, 0, 100, 100)
+        end)
+        
+        -- Cleanup
+        _G.love = nil
+    end)
+
+    it('should provide a method to set line width', function()
+        -- Mock love.graphics for this test
+        _G.love = {
+            graphics = {
+                setLineWidth = function(width) end
+            }
+        }
+        
+        local graphics = GraphicsWrapper.new()
+        assert.has_no.errors(function()
+            graphics:setLineWidth(2)
+        end)
         
         -- Cleanup
         _G.love = nil

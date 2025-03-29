@@ -3,12 +3,15 @@ love = {
     graphics = {
         getWidth = function() return 800 end,
         getHeight = function() return 600 end,
+        getDimensions = function() return 800, 600 end,
         setColor = function() end,
         circle = function() end,
         rectangle = function() end,
         draw = function() end,
         print = function() end,
-        newImage = function() return {} end
+        newImage = function() return {} end,
+        line = function() end,
+        setLineWidth = function() end
     },
     window = {
         getMode = function() return 800, 600 end
@@ -18,7 +21,7 @@ love = {
         isDown = function() return false end
     },
     keyboard = {
-        isDown = function() return false end
+        isDown = function(key) return false end
     },
     timer = {
         getDelta = function() return 0.016 end -- 60 FPS

@@ -18,4 +18,12 @@ function GraphicsWrapper:circle(mode, x, y, radius)
     love.graphics.circle(mode, x, y, radius)
 end
 
+function GraphicsWrapper:line(x1, y1, x2, y2)
+    love.graphics.line(x1, y1, x2, y2)
+end
+
+function GraphicsWrapper:setLineWidth(width)
+    love.graphics.setLineWidth(width)
+end
+
 return GraphicsWrapper 
